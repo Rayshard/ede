@@ -100,15 +100,49 @@ std::vector<Token> Tokenize(std::ifstream& _stream)
 			case '=': { result.push_back(Token(TokenID::SYM_EQUALS, lexer.GetPosition())); lexer.Read(_stream); } break;
 			default:
 			{
-				if (peeked == EOF)
+				if (std::isalpha(peeked) || peeked == '_') // Identifier or Keyword
+				{
+					std::string value;
+					Position position = lexer.GetPosition();
+					
+					do
+					{
+						value += lexer.Read(_stream);
+						peeked = lexer.Peek(_stream);
+					} while (std::isalnum(peeked) || peeked == '_');
+
+					static std::unordered_map<std::string, TokenID> KEYWORDS = {
+						{"let", TokenID::KW_LET }, {"int", TokenID::KW_INT }
+					};
+
+					auto keywordSearch = KEYWORDS.find(value);
+					if (keywordSearch != KEYWORDS.end()) { result.push_back(Token(keywordSearch->second, position)); }
+					else { result.push_back(Token(TokenID::IDENTIFIER, position, value)); }
+				}
+				else if (std::isdigit(peeked)) // Numeric Literal
+				{
+					std::string value;
+					Position position = lexer.GetPosition();
+
+					do
+					{
+						value += lexer.Read(_stream);
+						peeked = lexer.Peek(_stream);
+					} while (std::isdigit(peeked));
+
+					result.push_back(Token(TokenID::LIT_INT, position, value));
+				}
+				else if (peeked == EOF) // End of File
 				{
 					lexer.Read(_stream);
 					result.push_back(Token(TokenID::END_OF_FILE, lexer.GetPosition()));
 					return result;
 				}
-
-				result.push_back(Token(TokenID::INVALID, lexer.GetPosition()));
-				lexer.Read(_stream);
+				else // Invalid
+				{
+					result.push_back(Token(TokenID::INVALID, lexer.GetPosition()));
+					lexer.Read(_stream);
+				}
 			} break;
 		}
 	}
