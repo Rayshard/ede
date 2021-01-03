@@ -1,2 +1,2 @@
-# ede
-EDE Programming Language
+# EDE Programming Language
+
