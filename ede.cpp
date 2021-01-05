@@ -1,20 +1,15 @@
 #include "pch.h"
 #include <fstream>
-#include <string>
+#include "Utilities.h"
 
-
-struct Position
-{
-	size_t line, column;
-	Position(size_t _line, size_t _col) : line(_line), column(_col) { }
-
-	std::string ToString() { return "(" + std::to_string(line) + ", " + std::to_string(column) + ")"; }
-};
+using namespace ede::utilities;
 
 enum class TokenID
 {
 	KW_LET, KW_INT,
 	SYM_COLON, SYM_SEMICOLON, SYM_EQUALS,
+	SYM_PLUS, SYM_MINUS, SYM_ASTERISK, SYM_FSLASH, SYM_PERCENT,
+	SYM_LPAREN, SYM_RPAREN,
 	IDENTIFIER, LIT_INT,
 
 	END_OF_FILE, INVALID
@@ -39,6 +34,13 @@ struct Token
 			case TokenID::SYM_COLON: result += "COLON"; break;
 			case TokenID::SYM_SEMICOLON: result += "SEMICOLON"; break;
 			case TokenID::SYM_EQUALS: result += "EQUALS"; break;
+			case TokenID::SYM_PLUS: result += "PLUS"; break;
+			case TokenID::SYM_MINUS: result += "MINUS"; break;
+			case TokenID::SYM_ASTERISK: result += "ASTERISK"; break;
+			case TokenID::SYM_FSLASH: result += "FSLASH"; break;
+			case TokenID::SYM_PERCENT: result += "PERCENT"; break;
+			case TokenID::SYM_LPAREN: result += "LPAREN"; break;
+			case TokenID::SYM_RPAREN: result += "RPAREN"; break;
 			case TokenID::IDENTIFIER: result += "ID: " + value; break;
 			case TokenID::LIT_INT: result += "Integer Literal: " + value; break;
 			case TokenID::END_OF_FILE: result += "EOF"; break;
@@ -98,6 +100,13 @@ std::vector<Token> Tokenize(std::ifstream& _stream)
 			case ':': { result.push_back(Token(TokenID::SYM_COLON, lexer.GetPosition())); lexer.Read(_stream); } break;
 			case ';': { result.push_back(Token(TokenID::SYM_SEMICOLON, lexer.GetPosition())); lexer.Read(_stream); } break;
 			case '=': { result.push_back(Token(TokenID::SYM_EQUALS, lexer.GetPosition())); lexer.Read(_stream); } break;
+			case '+': { result.push_back(Token(TokenID::SYM_PLUS, lexer.GetPosition())); lexer.Read(_stream); } break;
+			case '-': { result.push_back(Token(TokenID::SYM_MINUS, lexer.GetPosition())); lexer.Read(_stream); } break;
+			case '*': { result.push_back(Token(TokenID::SYM_ASTERISK, lexer.GetPosition())); lexer.Read(_stream); } break;
+			case '/': { result.push_back(Token(TokenID::SYM_FSLASH, lexer.GetPosition())); lexer.Read(_stream); } break;
+			case '%': { result.push_back(Token(TokenID::SYM_PERCENT, lexer.GetPosition())); lexer.Read(_stream); } break;
+			case '(': { result.push_back(Token(TokenID::SYM_LPAREN, lexer.GetPosition())); lexer.Read(_stream); } break;
+			case ')': { result.push_back(Token(TokenID::SYM_RPAREN, lexer.GetPosition())); lexer.Read(_stream); } break;
 			default:
 			{
 				if (std::isalpha(peeked) || peeked == '_') // Identifier or Keyword
@@ -130,7 +139,12 @@ std::vector<Token> Tokenize(std::ifstream& _stream)
 						peeked = lexer.Peek(_stream);
 					} while (std::isdigit(peeked));
 
-					result.push_back(Token(TokenID::LIT_INT, position, value));
+					try
+					{
+						std::stoll(value); //Attempt Conversion
+						result.push_back(Token(TokenID::LIT_INT, position, value));
+					}
+					catch(...){ PushDiagnostic(DiagnosticType::ERROR_IntLitOutOfRange, position, value); }					
 				}
 				else if (peeked == EOF) // End of File
 				{
@@ -158,5 +172,7 @@ int main()
 		std::cout << tok.ToString() << std::endl;
 
 	file.close();
+	PrintDiagnostics();
+
 	return 0;
 }
