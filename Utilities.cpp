@@ -17,7 +17,9 @@ namespace ede::utilities
 			switch (type)
 			{
 				case DiagnosticType::ERROR_IntLitOutOfRange: header += "<ERROR> Integer Literal Out Of Range"; break;
-				default: header += "Unknown Diagnostic : "; break;
+				case DiagnosticType::ERROR_FloatLitOutOfRange: header += "<ERROR> Float Literal Out Of Range"; break;
+				case DiagnosticType::ERROR_InvalidFloatLit: header += "<ERROR> Invalid Floating Point Literal"; break;
+				default: header += "Unknown Diagnostic"; break;
 			}
 
 			std::cout << header << " : " << msg << std::endl;

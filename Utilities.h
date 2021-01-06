@@ -11,7 +11,9 @@ namespace ede::utilities
 	};
 
 	enum class DiagnosticType {
-		ERROR_IntLitOutOfRange
+		ERROR_IntLitOutOfRange,
+		ERROR_FloatLitOutOfRange,
+		ERROR_InvalidFloatLit,
 	};
 
 	void PushDiagnostic(DiagnosticType, Position, std::string);

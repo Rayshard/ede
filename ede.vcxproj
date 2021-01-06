@@ -151,13 +151,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ast.cpp" />
     <ClCompile Include="ede.cpp" />
+    <ClCompile Include="Interpreter.cpp" />
+    <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Examples\ex1.ede" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ast.h" />
+    <ClInclude Include="Interpreter.h" />
+    <ClInclude Include="Lexer.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
