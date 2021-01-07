@@ -1,9 +1,10 @@
 #pragma once
-#include "Utilities.h"
 
-using namespace ede::utilities;
+#include "AST.h"
 
-namespace ede::lexer
+using namespace ede::ast;
+
+namespace ede::parser
 {
 	enum class TokenID
 	{
@@ -27,19 +28,20 @@ namespace ede::lexer
 		std::string ToString();
 	};
 
-
 	class Lexer
 	{
+		std::stringstream stream;
 		Position position;
 		size_t tabsize;
 	public:
-		Lexer(size_t _tabsize) : position(1, 1), tabsize(_tabsize) { }
+		Lexer(const std::string& _src, size_t _tabsize) : stream(_src), position(1, 1), tabsize(_tabsize) { }
 
-		int Peek(std::ifstream& _stream);
-		int Read(std::ifstream& _stream);
-		std::vector<Token> Tokenize(std::ifstream& _stream);
+		int Peek();
+		int Read();
 
 		Position GetPosition() { return position; }
 	};
 
+	std::vector<Token> Tokenize(const std::string& _src, size_t _tabsize);
+	Node* Parse(const std::string& _src, size_t _tabsize);
 };

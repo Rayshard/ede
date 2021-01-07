@@ -1,22 +1,17 @@
 #include "pch.h"
 #include "Utilities.h"
-#include "Lexer.h"
+#include "Parser.h"
 
+using namespace ede;
 using namespace ede::utilities;
-using namespace ede::lexer;
 
 int main()
 {
 	std::ifstream file("Examples\\ex1.ede");
-	Lexer lexer(4);
 
-	auto tokens = lexer.Tokenize(file);
-
-	for (auto tok : tokens)
-		std::cout << tok.ToString() << std::endl;
+	auto node = parser::Parse(std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()), 4);
 
 	file.close();
 	PrintDiagnostics();
-
 	return 0;
 }

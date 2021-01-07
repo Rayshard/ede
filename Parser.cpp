@@ -1,8 +1,9 @@
 #include "pch.h"
-#include "Lexer.h"
+#include "Parser.h"
 
-namespace ede::lexer
+namespace ede::parser
 {
+#pragma region Lexing
 	std::string Token::ToString()
 	{
 		std::string result = position.ToString() + " ";
@@ -33,11 +34,11 @@ namespace ede::lexer
 		return result;
 	}
 
-	int Lexer::Peek(std::ifstream& _stream) { return _stream.peek(); }
+	int Lexer::Peek() { return stream.peek(); }
 
-	int Lexer::Read(std::ifstream& _stream)
+	int Lexer::Read()
 	{
-		int result = _stream.get();
+		int result = stream.get();
 
 		if (result == '\n')
 		{
@@ -50,43 +51,44 @@ namespace ede::lexer
 		return result;
 	}
 
-	std::vector<Token> Lexer::Tokenize(std::ifstream& _stream)
+	std::vector<Token> Tokenize(const std::string& _src, size_t _tabsize)
 	{
+		Lexer lexer(_src, _tabsize);
 		std::vector<Token> result;
 
 		while (true)
 		{
-			int peeked = Peek(_stream);
+			int peeked = lexer.Peek();
 
 			while (std::isspace(peeked))
 			{
-				Read(_stream);
-				peeked = Peek(_stream);
+				lexer.Read();
+				peeked = lexer.Peek();
 			}
 
 			switch (peeked)
 			{
-				case ':': { result.push_back(Token(TokenID::SYM_COLON, GetPosition())); Read(_stream); } break;
-				case ';': { result.push_back(Token(TokenID::SYM_SEMICOLON, GetPosition())); Read(_stream); } break;
-				case '=': { result.push_back(Token(TokenID::SYM_EQUALS, GetPosition())); Read(_stream); } break;
-				case '+': { result.push_back(Token(TokenID::SYM_PLUS, GetPosition())); Read(_stream); } break;
-				case '-': { result.push_back(Token(TokenID::SYM_MINUS, GetPosition())); Read(_stream); } break;
-				case '*': { result.push_back(Token(TokenID::SYM_ASTERISK, GetPosition())); Read(_stream); } break;
-				case '/': { result.push_back(Token(TokenID::SYM_FSLASH, GetPosition())); Read(_stream); } break;
-				case '%': { result.push_back(Token(TokenID::SYM_PERCENT, GetPosition())); Read(_stream); } break;
-				case '(': { result.push_back(Token(TokenID::SYM_LPAREN, GetPosition())); Read(_stream); } break;
-				case ')': { result.push_back(Token(TokenID::SYM_RPAREN, GetPosition())); Read(_stream); } break;
+				case ':': { result.push_back(Token(TokenID::SYM_COLON, lexer.GetPosition())); lexer.Read(); } break;
+				case ';': { result.push_back(Token(TokenID::SYM_SEMICOLON, lexer.GetPosition())); lexer.Read(); } break;
+				case '=': { result.push_back(Token(TokenID::SYM_EQUALS, lexer.GetPosition())); lexer.Read(); } break;
+				case '+': { result.push_back(Token(TokenID::SYM_PLUS, lexer.GetPosition())); lexer.Read(); } break;
+				case '-': { result.push_back(Token(TokenID::SYM_MINUS, lexer.GetPosition())); lexer.Read(); } break;
+				case '*': { result.push_back(Token(TokenID::SYM_ASTERISK, lexer.GetPosition())); lexer.Read(); } break;
+				case '/': { result.push_back(Token(TokenID::SYM_FSLASH, lexer.GetPosition())); lexer.Read(); } break;
+				case '%': { result.push_back(Token(TokenID::SYM_PERCENT, lexer.GetPosition())); lexer.Read(); } break;
+				case '(': { result.push_back(Token(TokenID::SYM_LPAREN, lexer.GetPosition())); lexer.Read(); } break;
+				case ')': { result.push_back(Token(TokenID::SYM_RPAREN, lexer.GetPosition())); lexer.Read(); } break;
 				default:
 				{
 					if (std::isalpha(peeked) || peeked == '_') // Identifier or Keyword
 					{
 						std::string value;
-						Position position = GetPosition();
+						Position position = lexer.GetPosition();
 
 						do
 						{
-							value += Read(_stream);
-							peeked = Peek(_stream);
+							value += lexer.Read();
+							peeked = lexer.Peek();
 						} while (std::isalnum(peeked) || peeked == '_');
 
 						static std::unordered_map<std::string, TokenID> KEYWORDS = {
@@ -101,22 +103,22 @@ namespace ede::lexer
 					else if (std::isdigit(peeked)) // Numeric Literal
 					{
 						std::string value;
-						Position position = GetPosition();
+						Position position = lexer.GetPosition();
 						bool isFloat = false;
 
 						do
 						{
-							value += Read(_stream);
-							peeked = Peek(_stream);
+							value += lexer.Read();
+							peeked = lexer.Peek();
 
 							if (peeked == '.')
 							{
-								value += Read(_stream);
+								value += lexer.Read();
 
 								if (isFloat) { break; }
 								else
 								{
-									peeked = Peek(_stream);
+									peeked = lexer.Peek();
 									isFloat = true;
 								}
 							}
@@ -157,17 +159,28 @@ namespace ede::lexer
 					}
 					else if (peeked == EOF) // End of File
 					{
-						Read(_stream);
-						result.push_back(Token(TokenID::END_OF_FILE, GetPosition()));
+						lexer.Read();
+						result.push_back(Token(TokenID::END_OF_FILE, lexer.GetPosition()));
 						return result;
 					}
 					else // Invalid
 					{
-						result.push_back(Token(TokenID::INVALID, GetPosition()));
-						Read(_stream);
+						result.push_back(Token(TokenID::INVALID, lexer.GetPosition()));
+						lexer.Read();
 					}
 				} break;
 			}
 		}
 	}
-};
+#pragma endregion
+
+	Node* Parse(const std::string& _src, size_t _tabsize)
+	{
+		auto tokens = Tokenize(_src, _tabsize);
+
+		for (auto tok : tokens)
+			std::cout << tok.ToString() << std::endl;
+		
+		return nullptr;
+	}
+}

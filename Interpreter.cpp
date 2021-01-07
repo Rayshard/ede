@@ -3,58 +3,69 @@
 
 namespace ede::interpreter
 {
-	Result Evaluate(Node* _node)
+	Result EvaluateExpression(Expression* _expr)
 	{
-		switch (_node->GetType())
+		switch (_expr->GetID())
 		{
-			case NodeType::STMT: return UNIT();
-			case NodeType::EXPR:
+			case ExprID::LITERAL:
 			{
-				Expression* expr = (Expression*)_node;
+				Literal* literal = (Literal*)_expr;
 
-				switch (expr->GetType())
+				return std::visit(overloaded{
+					[](UNIT _val) { return Result(_val); },
+					[](INT _val) { return Result(_val); },
+					[](FLOAT _val) { return Result(_val); },
+					}, literal->GetValue());
+			} break;
+			case ExprID::BINOP:
+			{
+				Binop* binop = (Binop*)_expr;
+				Result left = EvaluateExpression(binop->GetLeft()), right = EvaluateExpression(binop->GetRight());
+
+				switch (binop->GetOP())
 				{
-					case ExprType::LITERAL:
+					case BinopOP::ADD:
 					{
-						Literal* literal = (Literal*)expr;
-
-						return std::visit(overloaded{
-							[](UNIT _val) { return Result(_val); },
-							[](INT _val) { return Result(_val); },
-							[](FLOAT _val) { return Result(_val); },
-							}, literal->GetValue());
+						return INT(0);
 					} break;
-					case ExprType::BINOP:
+					case BinopOP::SUB:
 					{
-						Binop* binop = (Binop*)expr;
-						Result left = Evaluate(binop->GetLeft()), right = Evaluate(binop->GetRight());
-
-						switch (binop->GetType())
-						{
-							case BinopType::ADD:
-							{
-								return INT(0);
-							} break;
-							case BinopType::SUB:
-							{
-								return INT(0);
-							} break;
-							case BinopType::MUL:
-							{
-								return INT(0);
-							} break;
-							case BinopType::DIV:
-							{
-								return INT(0);
-							} break;
-							case BinopType::MOD:
-							{
-								return INT(0);
-							} break;
-						}
+						return INT(0);
+					} break;
+					case BinopOP::MUL:
+					{
+						return INT(0);
+					} break;
+					case BinopOP::DIV:
+					{
+						return INT(0);
+					} break;
+					case BinopOP::MOD:
+					{
+						return INT(0);
 					} break;
 				}
-			};
+			} break;
+		}
+
+		return UNIT();
+	}
+
+	Result Evaluate(Node* _node)
+	{
+		switch (_node->GetID())
+		{
+			case NodeID::STMT:
+			{
+				Statement* stmt = (Statement*)_node;
+
+				switch (stmt->GetID())
+				{
+					case StmtID::EXPR: return EvaluateExpression((Expression*)stmt);
+					default: return UNIT();
+				}
+			} break;
+			default: return UNIT();
 		}
 
 		return UNIT();

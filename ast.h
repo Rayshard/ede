@@ -1,7 +1,9 @@
 #pragma once
 #include "Utilities.h"
+#include "Typesystem.h"
 
 using namespace ede::utilities;
+using namespace ede::typesystem;
 
 namespace ede::ast
 {
@@ -9,38 +11,55 @@ namespace ede::ast
 	typedef long long INT;
 	typedef double FLOAT;
 
-	enum class NodeType { STMT, EXPR };
-	enum class ExprType { LITERAL, BINOP };
-	enum class BinopType { ADD, SUB, MUL, DIV, MOD };
+	enum class NodeID { STMT };
+	enum class StmtID { EXPR };
+	enum class ExprID { LITERAL, BINOP };
+	enum class BinopOP { ADD, SUB, MUL, DIV, MOD };
 
 	class Node
 	{
-		NodeType type;
+		NodeID id;
 		Position position;
 	protected:
-		Node(NodeType _type, Position _pos) : type(_type), position(_pos) { }
+		Node(NodeID _id, Position _pos) : id(_id), position(_pos) { }
 	public:
-		NodeType GetType() { return type; }
+		NodeID GetID() { return id; }
 		Position GetPosition() { return position; }
 	};
 
-	class Expression : public Node
+	class Statement : public Node
 	{
-		ExprType type;
+		StmtID id;
+		Type* type;
 	protected:
-		Expression(ExprType _type, Position _pos) : Node(NodeType::EXPR, _pos), type(_type) { }
+		Statement(StmtID _id, Position _pos) : Node(NodeID::STMT, _pos), id(_id) { }
+		~Statement() { delete type; }
+		
+		virtual Type* _TypeCheck() { return new PrimitiveType(PrimitiveID::UNIT); }
 	public:
-		ExprType GetType() { return type; }
+		Type* TypeCheck() { return type ? type : (type = _TypeCheck()); }
+
+		StmtID GetID() { return id; }
+		Type* GetType() { return type; }
+	};
+
+	class Expression : public Statement
+	{
+		ExprID id;
+	protected:
+		Expression(ExprID _id, Position _pos) : Statement(StmtID::EXPR, _pos), id(_id) { }
+	public:
+		ExprID GetID() { return id; }
 	};
 
 	class Binop : public Expression
 	{
-		BinopType type;
+		BinopOP op;
 		Expression* left, * right;
 	public:
-		Binop(Expression* _left, BinopType _type, Expression* _right, Position _pos) : Expression(ExprType::BINOP, _pos), left(_left), right(_right), type(_type) { }
+		Binop(Expression* _left, BinopOP _op, Expression* _right, Position _pos) : Expression(ExprID::BINOP, _pos), left(_left), right(_right), op(_op) { }
 
-		BinopType GetType() { return type; }
+		BinopOP GetOP() { return op; }
 		Expression* GetLeft() { return left; }
 		Expression* GetRight() { return right; }
 	};
@@ -50,8 +69,10 @@ namespace ede::ast
 		typedef std::variant<UNIT, INT, FLOAT> type;
 		type value;
 	public:
-		Literal(type _val, Position _pos) : Expression(ExprType::LITERAL, _pos), value(_val) { }
+		Literal(type _val, Position _pos) : Expression(ExprID::LITERAL, _pos), value(_val) { }
 
 		type GetValue() { return value; }
+
+		Type* GetType();
 	};
 };

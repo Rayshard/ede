@@ -3,5 +3,9 @@
 
 namespace ede::ast
 {
+	Type* Literal::GetType()
+	{
+		return new PrimitiveType(PrimitiveID::UNIT);
+	}
 }
 
