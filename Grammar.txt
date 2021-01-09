@@ -1,0 +1,11 @@
+
+STMT = 
+	EXPR ";"
+
+BINOP = "+" | "-" | "*" | "\" | "%"
+
+EXPR =
+	ATOM BINOP EXPR
+	ATOM
+
+ATOM = INT_LIT | FLOAT_LIT | ID | true | false

@@ -59,5 +59,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="Error Types.txt" />
+    <Text Include="Grammar.txt" />
   </ItemGroup>
 </Project>

@@ -174,13 +174,100 @@ namespace ede::parser
 	}
 #pragma endregion
 
+	class TokenStream
+	{
+		std::vector<Token> tokens;
+		size_t position;
+	public:
+		TokenStream(const std::vector<Token> _tokens) : tokens(_tokens), position(0) { }
+
+		Token& Peek() { return tokens[position]; }
+		Token& Read() { return tokens[position == tokens.size() ? position : position++]; }
+		void Unread() { position = position == 0 ? 0 : (position - 1); }
+
+		size_t GetPosition() { return position; }
+
+		void Print()
+		{
+			for (auto tok : tokens)
+				std::cout << tok.ToString() << std::endl;
+		}
+	};
+
+	Expression* ParseExpression(TokenStream& _stream);
+
+	Expression* ParseAtom(TokenStream& _stream)
+	{
+		Token& token = _stream.Read();
+		Position start = token.position;
+
+		switch (token.id)
+		{
+			case TokenID::KW_TRUE: return new Literal(true, start);
+			case TokenID::KW_FALSE: return new Literal(false, start);
+			case TokenID::LIT_INT: return new Literal(std::stoll(token.value), start);
+			case TokenID::LIT_FLOAT: return new Literal(std::stod(token.value), start);
+			case TokenID::SYM_LPAREN:
+			{
+				//Try get unit
+				if (_stream.Peek().id == TokenID::SYM_RPAREN)
+				{
+					_stream.Read();
+					return new Literal(UNIT(), start);
+				}
+
+				//Try get parenthesized expression
+				Expression* expr = ParseExpression(_stream);
+
+				if (expr)
+				{
+					Token& token = _stream.Read();
+
+					if (token.id == TokenID::SYM_RPAREN)
+						return expr;
+
+					PushDiagnostic(DiagnosticType::ERROR_ExpectedClosingParen, token.position, token.value);
+					_stream.Unread();
+					return expr;
+				}
+			} break;
+		}
+
+		PushDiagnostic(DiagnosticType::ERROR_ExpectedAtom, token.position, token.value);
+		_stream.Unread();
+		return nullptr;
+	}
+
+	Expression* ParseExpression(TokenStream& _stream)
+	{
+		return ParseAtom(_stream);
+	}
+
+	Statement* ParseStatement(TokenStream& _stream)
+	{
+		Token& peeked = _stream.Peek();
+		Expression* expr = ParseExpression(_stream);
+
+		if (expr)
+		{
+			Token& token = _stream.Read();
+
+			if (token.id == TokenID::SYM_SEMICOLON) { return expr; }
+			else
+			{
+				PushDiagnostic(DiagnosticType::ERROR_ExpectedSemicolon, token.position, token.value);
+				_stream.Unread();
+				return expr;
+			}
+		}
+
+		PushDiagnostic(DiagnosticType::ERROR_ExpectedStmt, peeked.position, peeked.value);
+	}
+
 	Node* Parse(const std::string& _src, size_t _tabsize)
 	{
-		auto tokens = Tokenize(_src, _tabsize);
+		TokenStream stream(Tokenize(_src, _tabsize));
 
-		for (auto tok : tokens)
-			std::cout << tok.ToString() << std::endl;
-		
-		return nullptr;
+		return ParseStatement(stream);
 	}
 }

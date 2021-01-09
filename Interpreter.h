@@ -6,7 +6,7 @@ using namespace ede::ast;
 
 namespace ede::interpreter
 {
-	typedef std::variant<UNIT, INT, FLOAT> Result;
+	typedef std::variant<UNIT, INT, FLOAT, BOOL> Result;
 
 	Result Evaluate(Node* _node);
 };

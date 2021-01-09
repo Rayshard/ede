@@ -14,8 +14,24 @@ namespace ede::utilities
 		ERROR_IntLitOutOfRange,
 		ERROR_FloatLitOutOfRange,
 		ERROR_InvalidFloatLit,
+		ERROR_ExpectedAtom,
+		ERROR_ExpectedStmt,
+		ERROR_ExpectedSemicolon,
+		ERROR_ExpectedClosingParen
 	};
 
 	void PushDiagnostic(DiagnosticType, Position, std::string);
 	void PrintDiagnostics();
+
+	class StringBuilder
+	{
+		std::string result, indent;
+	public:
+		void Write(const std::string& _str) { result += _str; }
+		void WriteLine(const std::string& _str) { result += _str + '\n' + indent; }
+		void Indent() { indent.push_back('\t'); }
+		void Dedent() { indent.pop_back(); }
+
+		std::string GetString() { return result; }
+	};
 };

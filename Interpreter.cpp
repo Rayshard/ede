@@ -15,6 +15,7 @@ namespace ede::interpreter
 					[](UNIT _val) { return Result(_val); },
 					[](INT _val) { return Result(_val); },
 					[](FLOAT _val) { return Result(_val); },
+					[](BOOL _val) { return Result(_val); },
 					}, literal->GetValue());
 			} break;
 			case ExprID::BINOP:
