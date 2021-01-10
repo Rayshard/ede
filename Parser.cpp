@@ -184,6 +184,7 @@ namespace ede::parser
 		Token& Peek() { return tokens[position]; }
 		Token& Read() { return tokens[position == tokens.size() ? position : position++]; }
 		void Unread() { position = position == 0 ? 0 : (position - 1); }
+		bool IsEOF() { return tokens[position].id == TokenID::END_OF_FILE; }
 
 		size_t GetPosition() { return position; }
 
@@ -193,6 +194,23 @@ namespace ede::parser
 				std::cout << tok.ToString() << std::endl;
 		}
 	};
+
+	std::string ParseTypeName(TokenStream& _stream)
+	{
+		Token& token = _stream.Read();
+		Position start = token.position;
+
+		switch (token.id)
+		{
+			case TokenID::IDENTIFIER: return token.value;
+			case TokenID::KW_INT: return "int";
+			case TokenID::KW_FLOAT: return "float";
+		}
+
+		PushDiagnostic(DiagnosticType::ERROR_ExpectedTypeName, token.position, token.value);
+		_stream.Unread();
+		return "";
+	}
 
 	Expression* ParseExpression(TokenStream& _stream);
 
@@ -238,36 +256,121 @@ namespace ede::parser
 		return nullptr;
 	}
 
+	Expression* ParseBinopExpression(TokenStream& _stream, Expression* _lhs, size_t _minPrec)
+	{
+		struct BinopInfo { BinopOP op;  size_t precedence; bool leftAssoc; };
+
+		//Map between binary operator symbols and if they are left associative
+		static std::unordered_map<TokenID, BinopInfo> BINOPS = {
+			{ TokenID::SYM_PLUS, { BinopOP::ADD, 0, true } }, { TokenID::SYM_MINUS, { BinopOP::SUB, 0, true } },
+			{ TokenID::SYM_ASTERISK, { BinopOP::MUL, 1, true } }, { TokenID::SYM_FSLASH, { BinopOP::DIV, 1, true }}, { TokenID::SYM_PERCENT, { BinopOP::MOD, 1, true } }
+		};
+
+		Expression* result = _lhs;
+		auto opSearch = BINOPS.find(_stream.Peek().id);
+
+		while (opSearch != BINOPS.end())
+		{
+			BinopInfo initOp = opSearch->second;
+			if (initOp.precedence < _minPrec) { break; }
+			else { _stream.Read(); }
+
+			Expression* rhs = ParseAtom(_stream);
+			opSearch = BINOPS.find(_stream.Peek().id);
+
+			while (opSearch != BINOPS.end())
+			{
+				BinopInfo postOp = opSearch->second;
+				if (postOp.precedence <= initOp.precedence && (postOp.leftAssoc || postOp.precedence != initOp.precedence))
+					break;
+
+				rhs = ParseBinopExpression(_stream, rhs, postOp.precedence);
+				opSearch = BINOPS.find(_stream.Peek().id);
+			}
+
+			result = new Binop(result, initOp.op, rhs, result->GetPosition());
+		}
+
+		return result;
+	}
+
 	Expression* ParseExpression(TokenStream& _stream)
 	{
-		return ParseAtom(_stream);
+		Expression* atom = ParseAtom(_stream);
+		return atom ? ParseBinopExpression(_stream, atom, 0) : atom;
+	}
+
+	VarDecl* ParseVarDecl(TokenStream& _stream)
+	{
+		Token& peeked = _stream.Peek();
+		if (peeked.id != TokenID::KW_LET) { return nullptr; }
+		else { _stream.Read(); }
+
+		Position start = peeked.position;
+		std::string varName;
+		peeked = _stream.Peek();
+		if (peeked.id != TokenID::IDENTIFIER)
+		{
+			PushDiagnostic(DiagnosticType::ERROR_ExpectedIdentifier, peeked.position, peeked.value);
+			return nullptr;
+		}
+		else { varName = _stream.Read().value; }
+
+		peeked = _stream.Peek();
+		if (peeked.id != TokenID::SYM_COLON)
+		{
+			PushDiagnostic(DiagnosticType::ERROR_ExpectedColon, peeked.position, peeked.value);
+			return nullptr;
+		}
+		else { _stream.Read(); }
+
+		std::string typeName = ParseTypeName(_stream);
+		if (typeName.empty()) { return nullptr; }
+
+		peeked = _stream.Peek();
+		if (peeked.id != TokenID::SYM_EQUALS)
+		{
+			PushDiagnostic(DiagnosticType::ERROR_ExpectedEquals, peeked.position, peeked.value);
+			return nullptr;
+		}
+		else { _stream.Read(); }
+
+		Expression* expr = ParseExpression(_stream);
+		if (!expr)
+		{
+			PushDiagnostic(DiagnosticType::ERROR_ExpectedExpr, _stream.Peek().position, _stream.Peek().value);
+			return nullptr;
+		}
+		else { return new VarDecl(varName, typeName, expr, start); }
 	}
 
 	Statement* ParseStatement(TokenStream& _stream)
 	{
-		Token& peeked = _stream.Peek();
-		Expression* expr = ParseExpression(_stream);
+		Statement* result = nullptr;
+		Token& start = _stream.Peek();
 
-		if (expr)
+		if ((result = ParseVarDecl(_stream)) || (result = ParseExpression(_stream)))
 		{
 			Token& token = _stream.Read();
-
-			if (token.id == TokenID::SYM_SEMICOLON) { return expr; }
-			else
+			if (token.id != TokenID::SYM_SEMICOLON)
 			{
 				PushDiagnostic(DiagnosticType::ERROR_ExpectedSemicolon, token.position, token.value);
 				_stream.Unread();
-				return expr;
 			}
 		}
+		else { PushDiagnostic(DiagnosticType::ERROR_ExpectedStmt, start.position, start.value); }
 
-		PushDiagnostic(DiagnosticType::ERROR_ExpectedStmt, peeked.position, peeked.value);
+		return result;
 	}
 
 	Node* Parse(const std::string& _src, size_t _tabsize)
 	{
 		TokenStream stream(Tokenize(_src, _tabsize));
+		std::vector<Statement*> statements;
 
-		return ParseStatement(stream);
+		while (!stream.IsEOF())
+			statements.push_back(ParseStatement(stream));
+
+		return new Block(statements, (!statements.empty() && statements.front()) ? statements.front()->GetPosition() : Position(1, 1));
 	}
 }

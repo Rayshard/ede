@@ -10,7 +10,7 @@ namespace ede::ast
 			case BinopOP::ADD: return "+";
 			case BinopOP::SUB: return "-";
 			case BinopOP::MUL: return "*";
-			case BinopOP::DIV: return "\\";
+			case BinopOP::DIV: return "/";
 			case BinopOP::MOD: return "%";
 			default: return "Unknown Binop Op";
 		}
@@ -28,7 +28,7 @@ namespace ede::ast
 		left->ToString(_builder);
 		_builder.Dedent();
 
-		_builder.Write("Right");
+		_builder.WriteLine("Right");
 		_builder.Indent();
 		right->ToString(_builder);
 		_builder.Dedent();
@@ -46,6 +46,33 @@ namespace ede::ast
 			}, value);
 
 		_builder.WriteLine("Literal: " + valueStr);
+	}
+	
+	void Block::ToString(StringBuilder& _builder)
+	{
+		_builder.WriteLine("Block");
+		_builder.Indent();
+
+		for (auto stmt : statements)
+			stmt->ToString(_builder);
+
+		_builder.Dedent();
+	}
+	
+	void VarDecl::ToString(StringBuilder& _builder)
+	{
+		_builder.WriteLine("Variable Declaration");
+		_builder.Indent();
+
+		_builder.WriteLine("VarName: " + varName);
+		_builder.WriteLine("TypeName: " + typeName);
+		
+		_builder.WriteLine("Expression: ");
+		_builder.Indent();
+		expr->ToString(_builder);
+		_builder.Dedent();
+
+		_builder.Dedent();
 	}
 }
 

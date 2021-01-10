@@ -10,3 +10,9 @@
 
 template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
+#define DELETE_VEC(VEC)                    \
+do {                                       \
+	for(auto item : VEC)				   \
+		delete item;					   \
+} while (0)

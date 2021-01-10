@@ -17,7 +17,12 @@ namespace ede::utilities
 		ERROR_ExpectedAtom,
 		ERROR_ExpectedStmt,
 		ERROR_ExpectedSemicolon,
-		ERROR_ExpectedClosingParen
+		ERROR_ExpectedClosingParen,
+		ERROR_ExpectedIdentifier,
+		ERROR_ExpectedColon,
+		ERROR_ExpectedTypeName,
+		ERROR_ExpectedEquals,
+		ERROR_ExpectedExpr,
 	};
 
 	void PushDiagnostic(DiagnosticType, Position, std::string);
@@ -27,10 +32,10 @@ namespace ede::utilities
 	{
 		std::string result, indent;
 	public:
-		void Write(const std::string& _str) { result += _str; }
-		void WriteLine(const std::string& _str) { result += _str + '\n' + indent; }
-		void Indent() { indent.push_back('\t'); }
-		void Dedent() { indent.pop_back(); }
+		void Write(const std::string& _str);
+		void WriteLine(const std::string& _str);
+		void Indent();
+		void Dedent();
 
 		std::string GetString() { return result; }
 	};

@@ -23,10 +23,20 @@ namespace ede::utilities
 				case DiagnosticType::ERROR_ExpectedStmt: header += "<ERROR> Expected a statement"; break;
 				case DiagnosticType::ERROR_ExpectedSemicolon: header += "<ERROR> Expected a semicolon"; break;
 				case DiagnosticType::ERROR_ExpectedClosingParen: header += "<ERROR> Expected a closing parenthesis"; break;
+				case DiagnosticType::ERROR_ExpectedIdentifier: header += "<ERROR> Expected an identifier"; break;
+				case DiagnosticType::ERROR_ExpectedColon: header += "<ERROR> Expected a colon"; break;
+				case DiagnosticType::ERROR_ExpectedTypeName: header += "<ERROR> Expected a type name"; break;
+				case DiagnosticType::ERROR_ExpectedEquals: header += "<ERROR> Expected an equals symbol"; break;
+				case DiagnosticType::ERROR_ExpectedExpr: header += "<ERROR> Expected an expression"; break;
 				default: header += "Unknown Diagnostic"; break;
 			}
 
 			std::cout << header << " : " << msg << std::endl;
 		}
 	}
+	
+	void StringBuilder::Write(const std::string& _str) { result += _str; }
+	void StringBuilder::WriteLine(const std::string& _str) { result += '\n' + indent + "|-" + _str; }
+	void StringBuilder::Indent() { indent.push_back(' '); }
+	void StringBuilder::Dedent() { indent.pop_back(); }
 };

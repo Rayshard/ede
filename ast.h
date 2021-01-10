@@ -13,7 +13,7 @@ namespace ede::ast
 	typedef bool BOOL;
 
 	enum class NodeID { STMT };
-	enum class StmtID { EXPR };
+	enum class StmtID { EXPR, BLOCK, VARDECL };
 	enum class ExprID { LITERAL, BINOP };
 	enum class BinopOP { ADD, SUB, MUL, DIV, MOD };
 
@@ -55,6 +55,37 @@ namespace ede::ast
 		ExprID GetID() { return id; }
 
 		virtual void ToString(StringBuilder& _builder) = 0;
+	};
+#pragma endregion
+
+#pragma region Block
+	class Block : public Statement
+	{
+		std::vector<Statement*> statements;
+	public:
+		Block(std::vector<Statement*>& _stmts, Position _pos) : Statement(StmtID::BLOCK, _pos), statements(_stmts) { }
+		~Block() { DELETE_VEC(statements); }
+
+		const std::vector<Statement*>& GetStatements() { return statements; }
+		
+		void ToString(StringBuilder& _builder);
+	};
+#pragma endregion
+
+#pragma region VarDecl
+	class VarDecl : public Statement
+	{
+		std::string varName, typeName;
+		Expression* expr;
+	public:
+		VarDecl(std::string _varName, std::string _typeName, Expression* _expr, Position _pos) : Statement(StmtID::VARDECL, _pos), varName(_varName), typeName(_typeName), expr(_expr) { }
+		~VarDecl() { delete expr; }
+
+		std::string GetVarName() { return varName; }
+		std::string GetTypeName() { return typeName; }
+		Expression* GetExpr() { return expr; }
+
+		void ToString(StringBuilder& _builder);
 	};
 #pragma endregion
 
